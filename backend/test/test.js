@@ -54,9 +54,9 @@ describe("Teacher Endpoints", () => {
     });
   });
 
-  it("POST /editTeacher should show a newly added teacher", async () => {
+  it("POST /addTeacher", async () => {
     // add new teacher
-    await requestWithSupertest.post("/editTeacher").send({
+    await requestWithSupertest.post("/addTeacher").send({
       "id": 10002,
       "name": "Saman",
       "age": 50
@@ -77,7 +77,7 @@ describe("Teacher Endpoints", () => {
     });
   });
 
-  it("POST /deleteTeacher should delete a teacher", async () => {
+  it("POST /deleteTeacher", async () => {
 
     // delete Student
     await requestWithSupertest.post("/deleteTeacher").send({
@@ -111,7 +111,7 @@ describe("Teacher Endpoints", () => {
 });
 
 describe("Student Endpoints", () => {
-  it("GET /listStudents should show all students", async () => {
+  it("GET /listStudents ", async () => {
     const res = await requestWithSupertest.get("/listStudents");
     expect(res.status).toEqual(200);
     let body = res.body;
@@ -128,7 +128,7 @@ describe("Student Endpoints", () => {
     expect(body[2].name).toBe('Isuri De Silva');
   });
 
-  it("POST /addStudent should show a newly added student", async () => {
+  it("POST /addStudent", async () => {
     // add new student
     await requestWithSupertest.post("/addStudent").send({
       "id": 99999,
@@ -151,9 +151,9 @@ describe("Student Endpoints", () => {
     });
   });
 
-  it("POST /editStudent should edit a Student", async () => {
+  it("POST /addStudent", async () => {
     // add new teacher
-    await requestWithSupertest.post("/editStudent").send({
+    await requestWithSupertest.post("/addStudent").send({
       "id": 20002,
       "name": "Sandakan",
       "age": 15,
@@ -176,7 +176,7 @@ describe("Student Endpoints", () => {
     });
   });
 
-  it("POST /deleteStudent should delete a student", async () => {
+  it("POST /deleteStudent ", async () => {
 
     // delete Student
     await requestWithSupertest.post("/deleteStudent").send({
