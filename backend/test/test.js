@@ -17,7 +17,7 @@ afterEach(async () => {
 });
 
 describe("Teacher Endpoints", () => {
-  it("GET /listTeachers should show all teachers", async () => {
+  it("GET /listTeachers ", async () => {
     const res = await requestWithSupertest.get("/listTeachers");
     expect(res.status).toEqual(200);
     let body = res.body;
@@ -33,7 +33,7 @@ describe("Teacher Endpoints", () => {
     expect(body[2].name).toBe('Parasanna Mahagamage');
   });
 
-  it("POST /addTeacher should show a newly added teacher", async () => {
+  it("POST /addTeacher ", async () => {
     // add new teacher
     await requestWithSupertest.post("/addTeacher").send({
       "id": 10033,
