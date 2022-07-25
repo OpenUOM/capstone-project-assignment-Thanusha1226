@@ -1,138 +1,213 @@
-const express = require ("express");
+const server = require("../server.js");
+const supertest = require("supertest");
+const requestWithSupertest = supertest(server);
 
-const {
-  readTeachers,
-  readStudents,
-  addStudent,
-  addTeacher,
-  deleteTeacher,
-  deleteStudent,
-  readStudentInfo,
-  readTeacherInfo,
-  updateStudent,
-  updateTeacher,
-  dbinitialize
-} = require ("./database.js");
+const db = require("../db-config");
+const testBase = require("./testBase");
 
-const app = express();
-const bodyParser = require  ("body-parser");
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-app.get("/dbinitialize", async function (req, res) {
-  console.log("DB is getting initialized");
-  let data = await dbinitialize();
-
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
-});
-// ============== Teacher Related endpoints ==============
-
-app.get("/listTeachers", async function (req, res) {
-  console.log("Request received to list teachers");
-  let data = await readTeachers();
-
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
+beforeAll(async () => {
+  await testBase.resetDatabase(db);
 });
 
-app.post("/getTeacherInfo", async function (req, res) {
-  let reqBody = req.body;
-  console.log("Request received to get Teacher Info");
-  let data = await readTeacherInfo(reqBody.id);
-
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
+/**
+ * Reset the database after every test case
+ */
+afterEach(async () => {
+  await testBase.resetDatabase(db);
 });
 
-app.post("/addTeacher", async function (req, res) {
-  let reqBody = req.body;
-  console.log(
-    "Request received to add teacher. Req body: " + JSON.stringify(reqBody)
-  );
-  let data = await addTeacher(reqBody.id, reqBody.name, reqBody.age);
+describe("Teacher Endpoints", () => {
+  it("GET /listTeachers should show all teachers", async () => {
+    const res = await requestWithSupertest.get("/listTeachers");
+    expect(res.status).toEqual(200);
+    let body = res.body;
+    expect(body.length).toEqual(3);
+    body.forEach(element => {
+      expect(element).toHaveProperty('age');
+      expect(element).toHaveProperty('name');
+      expect(element).toHaveProperty('id');
+    });
 
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
+    expect(body[0].name).toBe('Kusuma Ranasinghe');
+    expect(body[1].name).toBe('Saman De Silva');
+    expect(body[2].name).toBe('Parasanna Mahagamage');
+  });
+
+  it("POST /addTeacher should show a newly added teacher", async () => {
+    // add new teacher
+    await requestWithSupertest.post("/addTeacher").send({
+      "id": 10033,
+      "name": "Nilanthi Fernando",
+      "age": 42
+    });
+
+    const res = await requestWithSupertest.get("/listTeachers");
+    expect(res.status).toEqual(200);
+    let body = res.body;
+
+    expect(body.length).toBe(4)
+
+    expect(body).toContainEqual({
+      "id": 10033,
+      "name": "Nilanthi Fernando",
+      "age": 42
+    });
+  });
+
+  it("POST /editTeacher should show a newly added teacher", async () => {
+    // add new teacher
+    await requestWithSupertest.post("/editTeacher").send({
+      "id": 10002,
+      "name": "Saman",
+      "age": 50
+    });
+
+    const res = await requestWithSupertest.get("/listTeachers");
+    expect(res.status).toEqual(200);
+    let body = res.body;
+
+    expect(body).toContainEqual({
+      "id": 10002,
+      "name": "Saman",
+      "age": 50
+    });
+
+    expect(body).not.toContainEqual({
+      "name": "Saman De Silva",
+    });
+  });
+
+  it("POST /deleteTeacher should delete a teacher", async () => {
+
+    // delete Student
+    await requestWithSupertest.post("/deleteTeacher").send({
+      "id": 10003
+    });
+
+    const res = await requestWithSupertest.get("/listTeachers");
+    expect(res.status).toEqual(200);
+    let body = res.body;
+
+    body.forEach(element => {
+      expect(element).toHaveProperty('age');
+      expect(element).toHaveProperty('name');
+      expect(element).toHaveProperty('id');
+    });
+
+    expect(body.length).toBe(2);
+
+    expect(body).toContainEqual({
+      "id": 10001,
+      "name": "Kusuma Ranasinghe",
+      "age": 45
+    });
+
+    expect(body).not.toContainEqual({
+      "id": 10003,
+      "name": "Parasanna Mahagamage",
+      "age": 30
+    });
+  });
 });
 
-app.post("/editTeacher", async function (req, res) {
-  let reqBody = req.body;
-  console.log(
-    "Request received to update teacher. Req body: " + JSON.stringify(reqBody)
-  );
-  let data = await updateTeacher(reqBody.name,reqBody.age,reqBody.id);
+describe("Student Endpoints", () => {
+  it("GET /listStudents should show all students", async () => {
+    const res = await requestWithSupertest.get("/listStudents");
+    expect(res.status).toEqual(200);
+    let body = res.body;
+    expect(body.length).toEqual(3);
+    body.forEach(element => {
+      expect(element).toHaveProperty('age');
+      expect(element).toHaveProperty('name');
+      expect(element).toHaveProperty('id');
+      expect(element).toHaveProperty('hometown');
+    });
 
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
+    expect(body[0].name).toBe('Supun Mihiranga');
+    expect(body[1].name).toBe('Sandun Perera');
+    expect(body[2].name).toBe('Isuri De Silva');
+  });
+
+  it("POST /addStudent should show a newly added student", async () => {
+    // add new student
+    await requestWithSupertest.post("/addStudent").send({
+      "id": 99999,
+      "name": "Rashini Shehara",
+      "age": 12,
+      "hometown": "Galle"
+    });
+
+    const res = await requestWithSupertest.get("/listStudents");
+    expect(res.status).toEqual(200);
+    let body = res.body;
+
+    expect(body.length).toBe(4)
+
+    expect(body).toContainEqual({
+      "id": 99999,
+      "name": "Rashini Shehara",
+      "age": 12,
+      "hometown": "Galle"
+    });
+  });
+
+  it("POST /editStudent should edit a Student", async () => {
+    // add new teacher
+    await requestWithSupertest.post("/editStudent").send({
+      "id": 20002,
+      "name": "Sandakan",
+      "age": 15,
+      "hometown": "Homagama"
+    });
+
+    const res = await requestWithSupertest.get("/listStudents");
+    expect(res.status).toEqual(200);
+    let body = res.body;
+
+    expect(body).toContainEqual({
+      "id": 20002,
+      "name": "Sandakan",
+      "age": 15,
+      "hometown": "Homagama"
+    });
+
+    expect(body).not.toContainEqual({
+      "name": "Sandun Perera",
+    });
+  });
+
+  it("POST /deleteStudent should delete a student", async () => {
+
+    // delete Student
+    await requestWithSupertest.post("/deleteStudent").send({
+      "id": 20003
+    });
+
+    const res = await requestWithSupertest.get("/listStudents");
+    expect(res.status).toEqual(200);
+    let body = res.body;
+
+    expect(body.length).toBe(2)
+
+    body.forEach(element => {
+      expect(element).toHaveProperty('age');
+      expect(element).toHaveProperty('name');
+      expect(element).toHaveProperty('id');
+      expect(element).toHaveProperty('hometown');
+    });
+
+    expect(body).toContainEqual({
+      "id": 20001,
+      "name": "Supun Mihiranga",
+      "age": 10,
+      "hometown": "Colombo"
+    });
+
+    expect(body).not.toContainEqual({
+      "id": 20003,
+      "name": "Isuri De Silva",
+      "age": 10,
+      "hometown": "Kandy"
+    });
+  });
 });
-
-app.post("/deleteTeacher", async function (req, res) {
-  let reqBody = req.body;
-  console.log(
-    "Request received to delete teacher. Req body: " + JSON.stringify(reqBody)
-  );
-  let data = await deleteTeacher(reqBody.id);
-
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
-});
-
-// ============== Student Related endpoints ==============
-
-app.get("/listStudents", async function (req, res) {
-  console.log("Request received to list students");
-  let data = await readStudents();
-
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
-});
-
-app.post("/getStudentInfo ", async function (req, res) {
-  let reqBody = req.body;
-  console.log("Request received to get Student Info");
-  let data = await readStudentInfo(reqBody.id);
-
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
-});
-
-app.post("/addStudent", async function (req, res) {
-  let reqBody = req.body;
-  console.log(
-    "Request received to add student. Req body: " + JSON.stringify(reqBody)
-  );
-  let data = await addStudent(
-    reqBody.id,
-    reqBody.name,
-    reqBody.age,
-    reqBody.hometown
-  );
-
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
-});
-
-app.post("/deleteStudent", async function (req, res) {
-  let reqBody = req.body;
-  console.log(
-    "Request received to delete student. Req body: " + JSON.stringify(reqBody)
-  );
-  let data = await deleteStudent(reqBody.id);
-
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
-});
-
-app.post("/editStudent", async function (req, res) {
-  let reqBody = req.body;
-  console.log(
-    "Request received to update Student. Req body: " + JSON.stringify(reqBody)
-  );
-  let data = await updateStudent(reqBody.name,reqBody.age,reqBody.hometown,reqBody.id);
-
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
-});
-
-module.exports = app;
