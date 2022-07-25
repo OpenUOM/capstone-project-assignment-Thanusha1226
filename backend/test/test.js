@@ -194,6 +194,7 @@ describe("Student Endpoints", () => {
       expect(element).toHaveProperty('name');
       expect(element).toHaveProperty('id');
       expect(element).toHaveProperty('hometown');
+      
     });
 
     expect(body).toContainEqual({
